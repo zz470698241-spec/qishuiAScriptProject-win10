@@ -17,7 +17,28 @@
 | `ascript.ios.screen.FindImages` | `win_platform.FindImages` | OpenCV 模板匹配 |
 | `ascript.ios.node.Selector` 控件树 | `win_platform.Selector` | Win10 没有等价控件树，优雅降级返回空；原脚本里它只是第三层兜底，前面已有模板匹配和 OCR 两层 |
 
-新增文件：`config.py`（配置）、`win_platform/`（适配层）、`run.py`（启动入口）、`requirements.txt`、`install.bat`、本文档。
+新增文件：`config.py`（配置）、`win_platform/`（适配层）、`run.py`（启动入口）、`selftest.py`（自检）、`requirements.txt`、`install.bat`、三个 `.bat` 快捷入口、本文档。
+
+---
+
+## 一B、本机部署与验证状态（重要）
+
+**代码已通过端到端自检**：运行 `python selftest.py`，用合成屏幕图 + 真实 OCR 把全部 5 个业务阶段和核心循环驱动一遍，**16/16 项通过**——包括跳过开屏、关弹窗、识别「免/立即解锁」入口、等倒计时、两步领奖、循环累加与空跑自动退出。这证明代码逻辑本身没有问题。
+
+**真机端到端的前提（本机组装前不具备）**：脚本要真正自动点广告，还需要以下三样，需你自行准备：
+
+| 需要准备 | 说明 | 状态 |
+|---|---|---|
+| 安卓模拟器（雷电/夜神/MuMu 等）或安卓手机 | 在里面安装汽水音乐 App | 本机未安装 |
+| ADB 工具（Android Debug Bridge） | 电脑用来控制模拟器的命令行工具 | 本机未安装 |
+| 汽水音乐 App（安卓版） | 被自动操作的目标 | 需装进模拟器 |
+
+准备好后，在 `config.py` 填 `ADB_PATH`（adb.exe 路径）和 `APP_PACKAGE`（包名），即可运行。启动入口的预检会在缺 ADB 时明确拦截，不会盲跑。
+
+**本机已完成的部署**：
+- Python 依赖全部装好（rapidocr / onnxruntime / opencv / numpy / pillow / pyautogui）
+- 桌面已放启动器：`汽水脚本Win10.bat`（双击即可运行）
+- 项目内三个入口：`启动脚本.bat`（运行）、`一键自检.bat`（自检）、`修改配置.bat`（打开配置）
 
 ---
 

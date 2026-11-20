@@ -57,6 +57,12 @@ class ScreenCapture:
     def _capture_adb(self):
         base = adb_cmd(self._adb, ADB_DEVICE)
         try:
+            # 先删旧缓存，避免截图失败时误读到上一轮的陈旧画面
+            if os.path.isfile(self._local_shot):
+                try:
+                    os.remove(self._local_shot)
+                except Exception:
+                    pass
             subprocess.run(
                 base + ["shell", "screencap", "-p", self._remote_shot],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10,
