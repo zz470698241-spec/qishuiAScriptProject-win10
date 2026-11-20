@@ -1,0 +1,11 @@
+# 汽水音乐脚本 Win10 版依赖
+# 核心依赖（两种后端都需要）
+# 注意：新版包名是 rapidocr（3.x，支持 Python 3.8~3.13），旧的 rapidocr_onnxruntime 只支持到 3.12
+rapidocr>=3.10.0
+onnxruntime>=1.20.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# 仅当 config.py 里 SCREEN_BACKEND = "desktop" 时才需要
+pyautogui>=0.9.54

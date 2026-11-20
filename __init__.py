@@ -1,30 +1,33 @@
 # -*- coding: utf-8 -*-
 """
-汽水音乐 iOS 自动化脚本 — 自动看广告获取免费听歌权限
+汽水音乐自动化脚本 —— Win10 移植版
 ====================================================
-功能：
-  1. 启动汽水音乐 App
+原项目是 iOS + AScript 框架专用脚本（需 WebDriverAgent）。
+本版本把 iOS 专属 API 替换为 Windows 等价实现，可在 Win10 上直接以 Python 运行。
+
+功能（与原版一致）：
+  1. 启动汽水音乐（安卓设备/模拟器，或 Win10 桌面窗口）
   2. 全局弹窗清理（会员续费 / 看视频领时长 等）
   3. 监测右上角"免"字按钮，点击进入广告
-  4. 等待广告倒计时结束
-  5. 领取奖励
+  4. 等待广告倒计时结束（视频广告 / 直播间广告）
+  5. 领取奖励，无限循环
 
-技术栈：
-  - OCR 文字识别（优先）：ascript.ios.screen.Ocr
-  - 图像识别（兜底）  ：ascript.ios.screen.FindImages
-  - 动作执行          ：ascript.ios.action
-  - 应用管理          ：ascript.ios.system
+Win10 技术栈：
+  - OCR 文字识别：win_platform.Ocr        (RapidOCR)
+  - 图像识别兜底：win_platform.FindImages  (OpenCV)
+  - 动作执行    ：win_platform.action      (ADB input tap / pyautogui)
+  - 屏幕截图    ：win_platform.screen      (ADB screencap / pyautogui)
+  - 应用管理    ：win_platform.system
+
+配置请改根目录 config.py。运行：python run.py
 """
 
 import time
 import traceback
 
-# ============== 基础模块导入 ==============
-from ascript.ios import action  # type: ignore
-from ascript.ios.system import R, app_start, screen_size, notify  # type: ignore
-from ascript.ios.screen import Ocr, FindImages  # type: ignore
-from ascript.ios import node # type: ignore
-from ascript.ios.node import Selector # type: ignore
+# ============== 基础模块导入（Win10 适配层）==============
+# 原 ascript.ios.* 已替换为 win_platform.*，接口保持一致，下方业务逻辑无需改动
+from win_platform import action, R, app_start, screen_size, notify, Ocr, FindImages, Selector  # noqa: F401
 
 
 # ============== 全局配置 ==============
@@ -166,7 +169,7 @@ def skip_splash_ad(timeout=5) -> bool:
     rect 按屏幕比例动态计算：x:80%~97%, y:6%~10%。
     """
     log("阶段一B：检测并跳过开屏广告（paddleocr 精准识别中...）")
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     # 右上角跳过按钮区域（经实测在 x:80%~97%, y:6%~10% 范围）
     rect_skip = [int(w * 0.80), int(h * 0.06), int(w * 0.97), int(h * 0.10)]
@@ -231,7 +234,7 @@ def ocr_find_mid_first(keywords, mode=None):
       - 弹窗按钮（领取奖励 / 继续观看 / 坚持退出）都在屏幕中间
       - 顶部状态栏有「领取成功×」等小字，和弹窗按钮同字会导致 OCR 先命中错按钮
     """
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     mid_rect = [0, int(h * 0.2), w, int(h * 0.85)]
     engine = mode or OCR_ENGINE
@@ -288,7 +291,7 @@ def close_membership_popup() -> bool:
           不用右滑——右滑会触发 iOS 边缘返回手势把 App 切到后台。
     返回：是否检测到并执行了关闭。
     """
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     # 用户实测 [56,2435,1223,2676] @ 1284x2778
     # 约为 x:4.4%~95.3%, y:87.7%~96.3%，按屏幕比例动态计算
@@ -320,7 +323,7 @@ def check_and_close_thirdparty_download() -> bool:
     处理：直接点击"完成"关闭该页面，回到汽水音乐。
     返回：是否检测到第三方下载页（True=已点击"完成"尝试关闭）。
     """
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     # 左上角"完成"按钮区域（用户实测 [29,211,237,315] @ 1284x2778，
     # 约为 x:2%~18%, y:7.5%~11.3%，按屏幕比例动态计算）
@@ -400,7 +403,7 @@ def wait_for_mian_button(timeout=60, allow_mian=True) -> bool:
         log("阶段三：监测进广告入口（优先'立即解锁/领取'弹窗，其次'免'字）")
     else:
         log("阶段三：监测进广告入口（仅'立即解锁/领取'弹窗，不再找'免'字）")
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     rect_mian = [int(w * 0.65), int(h * 0.04), int(w * 0.92), int(h * 0.12)]
     rect_unlock = [int(w * 0.029), int(h * 0.52), int(w * 0.981), int(h * 0.982)]
@@ -539,7 +542,7 @@ def check_and_click_continue_watching() -> bool:
     所以只在中间区域检测，绝不在底部/全屏检测。
     返回 True 表示已点击中间的"继续观看"。
     """
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     # 中间显眼区域（用户实测 [96,706,1184,1889] @ 1284x2778，
     # 约为 x:7.5%~92%, y:25.4%~68%，按屏幕比例动态计算）
@@ -563,7 +566,7 @@ def wait_ad_countdown(timeout=30) -> bool:
     轮询优先级：领取成功 > 更多直播(直播间需关闭) > 秒后可领奖励(仅打印日志)
     """
     log("阶段四：等待广告倒计时结束（支持视频广告 & 直播间广告）")
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     # 右上角"领取成功"区域（视频广告结束 或 直播间关闭后）
     rect_claim_top = [int(w * 0.55), int(h * 0.03), w, int(h * 0.14)]
@@ -710,7 +713,7 @@ def claim_reward() -> int:
     返回值：1=两步都成功，已进入下一轮广告；0=超时失败
     """
     log("阶段五：领取奖励（确定两步：点领取成功 → 点领取奖励 → 进入下一轮广告）")
-    from ascript.ios.system import screen_size as _ss  # type: ignore
+    from win_platform import screen_size as _ss  # type: ignore
     w, h = _ss() or (1080, 1920)
     # 右上角"领取成功"专属区（倒计时结束标志）
     rect_claim_top = [int(w * 0.55), int(h * 0.03), w, int(h * 0.14)]
@@ -843,5 +846,6 @@ def main():
         log("脚本退出")
 
 
-# ============== 入口：AScript 工程约定顶层直接执行 ==============
-main()
+# ============== 入口：Win10 标准 Python 入口 ==============
+if __name__ == "__main__":
+    main()

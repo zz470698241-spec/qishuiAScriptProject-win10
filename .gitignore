@@ -1,3 +1,7 @@
 .vscode/.ascript-sync.json
 
-
+# Python 缓存与运行产物
+__pycache__/
+*.py[cod]
+*.log
+ocr_test.png
